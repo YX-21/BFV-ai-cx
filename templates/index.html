@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BFV Gametools 数据面板</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;500;600;700&family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="page-shell">
+        <header class="hero">
+            <div class="hero__copy">
+                <p class="eyebrow">Battlefield V · Gametools API</p>
+                <h1>战地 V 数据面板</h1>
+                <p class="hero__lead">
+                    统一查询玩家战绩、服务器状态与实时玩家列表。当前版本以 Gametools API 为核心，
+                    首页概览、玩家详情和服务器玩家名单都由后端聚合后再输出。
+                </p>
+                <div class="hero__meta">
+                    <span id="last-updated">正在同步全局状态...</span>
+                    <span>数据源：Gametools Network</span>
+                </div>
+            </div>
+            <div class="overview-grid" id="overview-grid">
+                <article class="metric-card">
+                    <p>在线玩家</p>
+                    <strong>--</strong>
+                    <span>读取中</span>
+                </article>
+                <article class="metric-card">
+                    <p>活跃服务器</p>
+                    <strong>--</strong>
+                    <span>读取中</span>
+                </article>
+                <article class="metric-card">
+                    <p>排队人数</p>
+                    <strong>--</strong>
+                    <span>读取中</span>
+                </article>
+                <article class="metric-card">
+                    <p>社区 / 官服</p>
+                    <strong>--</strong>
+                    <span>读取中</span>
+                </article>
+            </div>
+        </header>
+
+        <main class="layout">
+            <section class="panel panel--controls">
+                <div class="panel__header">
+                    <div>
+                        <p class="panel__eyebrow">Search Console</p>
+                        <h2>查询入口</h2>
+                    </div>
+                    <p class="panel__description">玩家查询支持玩家名和 personaId，服务器查询支持平台和地区过滤。</p>
+                </div>
+
+                <div class="view-switch" role="tablist" aria-label="查询视图切换">
+                    <button type="button" class="view-switch__button is-active" data-view="player">玩家查询</button>
+                    <button type="button" class="view-switch__button" data-view="server">服务器查询</button>
+                </div>
+
+                <form id="player-form" class="search-form search-form--active" novalidate>
+                    <label class="field field--wide">
+                        <span>玩家名 / personaId</span>
+                        <input id="player-query" name="query" type="text" autocomplete="off" placeholder="例如：iiTzArcur 或 1007565398743">
+                    </label>
+
+                    <label class="field">
+                        <span>平台</span>
+                        <select name="platform">
+                            <option value="pc" selected>PC</option>
+                            <option value="xboxone">Xbox One</option>
+                            <option value="ps4">PS4</option>
+                        </select>
+                    </label>
+
+                    <button class="primary-button" type="submit">查询玩家</button>
+                </form>
+
+                <form id="server-form" class="search-form" novalidate>
+                    <label class="field field--wide">
+                        <span>服务器名称</span>
+                        <input id="server-query" name="query" type="text" autocomplete="off" placeholder="例如：BoB、Iwo、Breakthrough">
+                    </label>
+
+                    <label class="field">
+                        <span>平台</span>
+                        <select name="platform">
+                            <option value="pc" selected>PC</option>
+                            <option value="xboxone">Xbox One</option>
+                            <option value="ps4">PS4</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>地区</span>
+                        <select name="region">
+                            <option value="all" selected>全部</option>
+                            <option value="Asia">亚洲</option>
+                            <option value="EU">欧洲</option>
+                            <option value="NAm">北美</option>
+                            <option value="SAm">南美</option>
+                            <option value="OC">大洋洲</option>
+                            <option value="Afr">非洲</option>
+                            <option value="AC">南极</option>
+                        </select>
+                    </label>
+
+                    <label class="field">
+                        <span>返回数量</span>
+                        <select name="limit">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="30">30</option>
+                            <option value="50">50</option>
+                        </select>
+                    </label>
+
+                    <button class="primary-button" type="submit">查询服务器</button>
+                </form>
+
+                <div id="notice" class="notice" hidden></div>
+            </section>
+
+            <section class="panel panel--insights">
+                <div class="panel__header">
+                    <div>
+                        <p class="panel__eyebrow">Live Snapshot</p>
+                        <h2>当前热度</h2>
+                    </div>
+                    <p class="panel__description">基于 `/bfv/status/` 聚合热门地图、热门模式和区域活跃度。</p>
+                </div>
+
+                <div class="insight-grid">
+                    <article class="insight-card">
+                        <div class="insight-card__header">
+                            <h3>热门地图</h3>
+                            <span>在线人数</span>
+                        </div>
+                        <div id="top-maps" class="rank-list">
+                            <div class="rank-list__empty">等待加载</div>
+                        </div>
+                    </article>
+
+                    <article class="insight-card">
+                        <div class="insight-card__header">
+                            <h3>热门模式</h3>
+                            <span>在线人数</span>
+                        </div>
+                        <div id="top-modes" class="rank-list">
+                            <div class="rank-list__empty">等待加载</div>
+                        </div>
+                    </article>
+
+                    <article class="insight-card">
+                        <div class="insight-card__header">
+                            <h3>区域活跃度</h3>
+                            <span>玩家 / 服务器</span>
+                        </div>
+                        <div id="regions" class="region-list">
+                            <div class="rank-list__empty">等待加载</div>
+                        </div>
+                    </article>
+                </div>
+            </section>
+
+            <section class="panel panel--results">
+                <div class="panel__header">
+                    <div>
+                        <p class="panel__eyebrow">Result Workspace</p>
+                        <h2 id="results-title">等待查询</h2>
+                    </div>
+                    <p id="results-subtitle" class="panel__description">输入玩家名或服务器名，结果会在这里展示。</p>
+                </div>
+
+                <div id="loading-state" class="loading-state" hidden>
+                    <div class="loading-state__spinner"></div>
+                    <p id="loading-text">正在查询...</p>
+                </div>
+
+                <div id="results">
+                    <div class="empty-state">
+                        <h3>从这里开始升级后的查询流程</h3>
+                        <p>首页概览已经切换到 Gametools 状态接口，接下来你可以查询玩家战绩，或者打开服务器实时玩家名单。</p>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="{{ url_for('static', filename='app.js') }}" defer></script>
+</body>
+</html>
